@@ -1,11 +1,42 @@
-<!DOCTYPE html>
+#!/usr/bin/env node
+
+/**
+ * Skill Page Generator
+ * 
+ * Generates HTML pages for all skills in skills-data.js
+ * Run: node generate-pages.js
+ */
+
+const fs = require('fs');
+const path = require('path');
+
+// Load skills data
+const skillsDataPath = path.join(__dirname, 'js', 'skills-data.js');
+const skillsDataContent = fs.readFileSync(skillsDataPath, 'utf-8');
+
+// Extract skillsData array (simple regex - works for our format)
+const skillsMatch = skillsDataContent.match(/const skillsData = \[([\s\S]*?)\];/);
+if (!skillsMatch) {
+    console.error('Could not parse skills data');
+    process.exit(1);
+}
+
+// Parse skills (this is a simple eval - in production use a proper parser)
+const skillsData = eval('[' + skillsMatch[1] + ']');
+
+// Generate skill page template
+function generateSkillPage(skill) {
+    const badgeClass = skill.trustScore >= 90 ? 'safe' : skill.trustScore >= 80 ? 'warning' : '';
+    const badge = skill.trustScore >= 90 ? 'Verified' : skill.trustScore >= 80 ? 'Safe' : 'Review';
+    
+    return `<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GitHub - OpenClaw Skill | OpenClaw Skills Directory</title>
-    <meta name="description" content="Managed OAuth, handles repos, issues, PRs, commits. Essential for dev work. Your agent can create issues, review PRs, search code without touching the GitHub UI.">
-    <meta name="keywords" content="GitHub, OpenClaw skill, development, version-control, automation">
+    <title>${skill.name} - OpenClaw Skill | OpenClaw Skills Directory</title>
+    <meta name="description" content="${skill.description}">
+    <meta name="keywords" content="${skill.name}, OpenClaw skill, ${skill.tags.join(', ')}">
     <link rel="stylesheet" href="../css/style.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     
@@ -34,21 +65,21 @@
                 <span style="color: var(--text-muted);">/</span>
                 <a href="/#categories" style="color: var(--text-muted); text-decoration: none;">Skills</a>
                 <span style="color: var(--text-muted);">/</span>
-                <span style="color: var(--text-primary);">GitHub</span>
+                <span style="color: var(--text-primary);">${skill.name}</span>
             </div>
 
             <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 2rem;">
                 <div>
-                    <h1 style="font-size: 2.5rem; margin-bottom: 0.5rem;">GitHub</h1>
-                    <p style="color: var(--text-secondary);">by steipete</p>
+                    <h1 style="font-size: 2.5rem; margin-bottom: 0.5rem;">${skill.name}</h1>
+                    <p style="color: var(--text-secondary);">by ${skill.author}</p>
                 </div>
-                <div class="skill-badge safe">Verified</div>
+                <div class="skill-badge ${badgeClass}">${badge}</div>
             </div>
 
             <div style="background-color: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 12px; padding: 2rem; margin-bottom: 2rem;">
                 <h2 style="margin-bottom: 1rem;">Install</h2>
                 <div class="code-block" style="margin: 0;">
-                    <code id="installCommand">npx clawhub@latest install github</code>
+                    <code id="installCommand">${skill.installCommand}</code>
                 </div>
                 <button class="install-button" style="margin-top: 1rem;" onclick="copyCommand()">
                     📋 Copy Install Command
@@ -70,16 +101,16 @@
 
             <div style="background-color: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 12px; padding: 2rem; margin-bottom: 2rem;">
                 <h2 style="margin-bottom: 1rem;">Description</h2>
-                <p style="color: var(--text-secondary); line-height: 1.8;">Managed OAuth, handles repos, issues, PRs, commits. Essential for dev work. Your agent can create issues, review PRs, search code without touching the GitHub UI.</p>
+                <p style="color: var(--text-secondary); line-height: 1.8;">${skill.description}</p>
             </div>
 
             <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 2rem;">
                 <div style="background-color: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 12px; padding: 1.5rem; text-align: center;">
-                    <div style="font-size: 2rem; font-weight: 700; color: var(--accent-primary);">8.5k</div>
+                    <div style="font-size: 2rem; font-weight: 700; color: var(--accent-primary);">${formatNumber(skill.downloads)}</div>
                     <div style="color: var(--text-muted); font-size: 0.875rem;">Downloads</div>
                 </div>
                 <div style="background-color: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 12px; padding: 1.5rem; text-align: center;">
-                    <div style="font-size: 2rem; font-weight: 700; color: var(--success);">95%</div>
+                    <div style="font-size: 2rem; font-weight: 700; color: var(--success);">${skill.trustScore}%</div>
                     <div style="color: var(--text-muted); font-size: 0.875rem;">Trust Score</div>
                 </div>
                 <div style="background-color: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 12px; padding: 1.5rem; text-align: center;">
@@ -91,16 +122,14 @@
             <div style="background-color: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 12px; padding: 2rem; margin-bottom: 2rem;">
                 <h2 style="margin-bottom: 1rem;">Tags</h2>
                 <div class="skill-tags">
-                    <span class="tag">development</span>
-                    <span class="tag">version-control</span>
-                    <span class="tag">automation</span>
+                    ${skill.tags.map(tag => `<span class="tag">${tag}</span>`).join('\n                    ')}
                 </div>
             </div>
 
             <div style="background-color: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 12px; padding: 2rem;">
                 <h2 style="margin-bottom: 1rem;">Category</h2>
-                <a href="../categories/git-github.html" style="color: var(--accent-primary); text-decoration: none; font-weight: 600;">
-                    🔀 Git & GitHub
+                <a href="../categories/${getCategorySlug(skill.category)}.html" style="color: var(--accent-primary); text-decoration: none; font-weight: 600;">
+                    ${getCategoryIcon(skill.category)} ${skill.category}
                 </a>
             </div>
         </div>
@@ -148,4 +177,63 @@
         }
     </script>
 </body>
-</html>
+</html>`;
+}
+
+// Helper functions
+function formatNumber(num) {
+    if (num >= 1000) {
+        return (num / 1000).toFixed(1) + 'k';
+    }
+    return num.toString();
+}
+
+function getCategorySlug(category) {
+    return category.toLowerCase()
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/(^-|-$)/g, '');
+}
+
+function getCategoryIcon(category) {
+    const icons = {
+        'Git & GitHub': '🔀',
+        'Communication': '💬',
+        'Productivity & Tasks': '✅',
+        'Browser & Automation': '🤖',
+        'Notes & PKM': '📝',
+        'Self-Hosted & Automation': '🔧',
+        'Web & Frontend Development': '🎨',
+        'Coding Agents & IDEs': '💻',
+        'Moltbook': '🦞',
+        'DevOps & Cloud': '☁️',
+        'Search & Research': '🔍',
+        'Smart Home & IoT': '🏠',
+        'Speech & Transcription': '🎤',
+        'Finance': '💰',
+        'Calendar & Scheduling': '📅',
+        'Social Media': '📱'
+    };
+    return icons[category] || '📦';
+}
+
+// Generate all skill pages
+console.log('Generating skill pages...');
+const skillsDir = path.join(__dirname, 'skills');
+
+if (!fs.existsSync(skillsDir)) {
+    fs.mkdirSync(skillsDir, { recursive: true });
+}
+
+let generated = 0;
+for (const skill of skillsData) {
+    const filename = `${skill.slug}.html`;
+    const filepath = path.join(skillsDir, filename);
+    const html = generateSkillPage(skill);
+    
+    fs.writeFileSync(filepath, html);
+    generated++;
+    console.log(`✅ Generated: ${filename}`);
+}
+
+console.log(`\n🎉 Generated ${generated} skill pages!`);
+console.log(`📂 Location: ${skillsDir}`);

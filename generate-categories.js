@@ -1,10 +1,37 @@
-<!DOCTYPE html>
+#!/usr/bin/env node
+
+/**
+ * Category Page Generator
+ * 
+ * Generates HTML category pages
+ * Run: node generate-categories.js
+ */
+
+const fs = require('fs');
+const path = require('path');
+
+// Load data
+const skillsDataPath = path.join(__dirname, 'js', 'skills-data.js');
+const skillsDataContent = fs.readFileSync(skillsDataPath, 'utf-8');
+
+// Extract categories
+const categoriesMatch = skillsDataContent.match(/const categories = \[([\s\S]*?)\];/);
+if (!categoriesMatch) {
+    console.error('Could not parse categories data');
+    process.exit(1);
+}
+
+const categories = eval('[' + categoriesMatch[1] + ']');
+
+// Generate category page template
+function generateCategoryPage(category) {
+    return `<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Git & GitHub Skills | OpenClaw Skills Directory</title>
-    <meta name="description" content="66 Git & GitHub skills for OpenClaw. Install the best AI agent skills.">
+    <title>${category.name} Skills | OpenClaw Skills Directory</title>
+    <meta name="description" content="${category.count} ${category.name} skills for OpenClaw. Install the best AI agent skills.">
     <link rel="stylesheet" href="../css/style.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     
@@ -32,13 +59,13 @@
             <span style="color: var(--text-muted);">/</span>
             <a href="/#categories" style="color: var(--text-muted); text-decoration: none;">Categories</a>
             <span style="color: var(--text-muted);">/</span>
-            <span style="color: var(--text-primary);">Git & GitHub</span>
+            <span style="color: var(--text-primary);">${category.name}</span>
         </div>
 
         <div style="text-align: center; margin-bottom: 3rem;">
-            <div style="font-size: 4rem; margin-bottom: 1rem;">🔀</div>
-            <h1 style="font-size: 2.5rem; margin-bottom: 0.5rem;">Git & GitHub</h1>
-            <p style="color: var(--text-secondary);">66 skills available</p>
+            <div style="font-size: 4rem; margin-bottom: 1rem;">${category.icon}</div>
+            <h1 style="font-size: 2.5rem; margin-bottom: 0.5rem;">${category.name}</h1>
+            <p style="color: var(--text-secondary);">${category.count} skills available</p>
         </div>
 
         <!-- AdSense -->
@@ -91,7 +118,7 @@
     <script src="../js/main.js"></script>
     <script>
         // Filter skills by category
-        const categorySkills = skillsData.filter(skill => skill.category === 'Git & GitHub');
+        const categorySkills = skillsData.filter(skill => skill.category === '${category.name}');
         const container = document.getElementById('categorySkills');
         const noSkills = document.getElementById('noSkills');
         
@@ -102,4 +129,27 @@
         }
     </script>
 </body>
-</html>
+</html>`;
+}
+
+// Generate all category pages
+console.log('Generating category pages...');
+const categoriesDir = path.join(__dirname, 'categories');
+
+if (!fs.existsSync(categoriesDir)) {
+    fs.mkdirSync(categoriesDir, { recursive: true });
+}
+
+let generated = 0;
+for (const category of categories) {
+    const filename = `${category.slug}.html`;
+    const filepath = path.join(categoriesDir, filename);
+    const html = generateCategoryPage(category);
+    
+    fs.writeFileSync(filepath, html);
+    generated++;
+    console.log(`✅ Generated: ${filename}`);
+}
+
+console.log(`\n🎉 Generated ${generated} category pages!`);
+console.log(`📂 Location: ${categoriesDir}`);
