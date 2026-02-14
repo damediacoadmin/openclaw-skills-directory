@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Search Results - OpenClaw Skills Directory</title>
+    <meta name="description" content="Search results for OpenClaw skills">
+    <link rel="stylesheet" href="css/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- AdSense -->
+    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-XXXXXXXXXX" crossorigin="anonymous"></script>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="container">
+            <a href="/" class="logo">
+                <span class="logo-icon">🦞</span>
+                <span class="logo-text">OpenClaw Skills</span>
+            </a>
+            <div class="nav-links">
+                <a href="/">Home</a>
+                <a href="/#categories">Categories</a>
+                <a href="https://clawhub.ai" target="_blank">ClawHub</a>
+            </div>
+        </div>
+    </nav>
+
+    <section style="padding: 2rem 0;">
+        <div class="container">
+            <h1 id="searchTitle">Search Results</h1>
+            
+            <div class="search-container" style="margin: 2rem 0;">
+                <input type="text" id="searchInput" placeholder="Search skills..." class="search-input">
+                <button class="search-button" onclick="performSearch()">
+                    <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="11" cy="11" r="8"></circle>
+                        <path d="m21 21-4.35-4.35"></path>
+                    </svg>
+                </button>
+            </div>
+
+            <!-- AdSense -->
+            <div class="ad-container">
+                <ins class="adsbygoogle"
+                     style="display:block"
+                     data-ad-format="fluid"
+                     data-ad-layout-key="-fb+5w+4e-db+86"
+                     data-ad-client="ca-pub-XXXXXXXXXX"
+                     data-ad-slot="XXXXXXXXXX"></ins>
+                <script>
+                     (adsbygoogle = window.adsbygoogle || []).push({});
+                </script>
+            </div>
+
+            <div id="resultsCount" style="color: var(--text-secondary); margin: 1rem 0;"></div>
+            
+            <div class="skills-grid" id="searchResults"></div>
+            
+            <div id="noResults" style="display: none; text-align: center; padding: 4rem 0;">
+                <h2 style="color: var(--text-secondary);">No skills found</h2>
+                <p style="color: var(--text-muted);">Try a different search term or browse <a href="/#categories" style="color: var(--accent-primary);">categories</a></p>
+            </div>
+        </div>
+    </section>
+
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <h3>OpenClaw Skills Directory</h3>
+                    <p>Curated directory of the best OpenClaw skills with reviews and trust scores.</p>
+                </div>
+                <div class="footer-section">
+                    <h3>Resources</h3>
+                    <a href="https://clawhub.ai">ClawHub Official</a>
+                    <a href="https://docs.openclaw.ai">Documentation</a>
+                    <a href="https://github.com/openclaw/skills">GitHub</a>
+                </div>
+                <div class="footer-section">
+                    <h3>Legal</h3>
+                    <a href="/privacy.html">Privacy Policy</a>
+                    <a href="/terms.html">Terms of Service</a>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2026 OpenClaw Skills Directory. Not affiliated with OpenClaw or ClawHub.</p>
+            </div>
+        </div>
+    </footer>
+
+    <script src="js/skills-data.js"></script>
+    <script src="js/main.js"></script>
+    <script>
+        // Get search query from URL
+        const urlParams = new URLSearchParams(window.location.search);
+        const query = urlParams.get('q') || '';
+        
+        document.getElementById('searchInput').value = query;
+        document.getElementById('searchTitle').textContent = `Search Results for "${query}"`;
+        
+        // Perform search
+        function performSearch() {
+            const newQuery = document.getElementById('searchInput').value;
+            window.location.href = `search.html?q=${encodeURIComponent(newQuery)}`;
+        }
+        
+        // Filter skills
+        const results = skillsData.filter(skill => {
+            const searchLower = query.toLowerCase();
+            return skill.name.toLowerCase().includes(searchLower) ||
+                   skill.description.toLowerCase().includes(searchLower) ||
+                   skill.tags.some(tag => tag.toLowerCase().includes(searchLower)) ||
+                   skill.category.toLowerCase().includes(searchLower);
+        });
+        
+        // Display results
+        const resultsContainer = document.getElementById('searchResults');
+        const resultsCount = document.getElementById('resultsCount');
+        const noResults = document.getElementById('noResults');
+        
+        if (results.length > 0) {
+            resultsCount.textContent = `Found ${results.length} skill${results.length !== 1 ? 's' : ''}`;
+            resultsContainer.innerHTML = results.map(skill => createSkillCard(skill)).join('');
+        } else {
+            noResults.style.display = 'block';
+            resultsCount.style.display = 'none';
+        }
+        
+        // Setup enter key
+        document.getElementById('searchInput').addEventListener('keyup', function(e) {
+            if (e.key === 'Enter') {
+                performSearch();
+            }
+        });
+    </script>
+</body>
+</html>
